@@ -33,7 +33,7 @@ abstract class TestCase extends PackageTestCase
 
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('session.driver', 'array');
-        $app['config']->set('interactions.user_model', User::class);
+        $app['config']->set('kurtmodules.user_model', User::class);
         $app['config']->set('interactions.mentions.pool', [
             ['model' => User::class, 'column' => 'username'],
         ]);

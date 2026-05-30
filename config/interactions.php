@@ -15,20 +15,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | User model + mention pool
+    | Mentions
     |--------------------------------------------------------------------------
     |
-    | `pool` lists the models @mentions resolve against and the column to match
-    | a handle on (e.g. ['model' => User::class, 'column' => 'username']).
+    | The actor user model comes from Core (kurtmodules.user_model). `pool`
+    | lists the models @mentions resolve against and the column to match a
+    | handle on. When `model` is omitted, the Core-resolved user model is used.
     |
     */
-    'user_model' => 'App\\Models\\User',
-
     'mentions' => [
         // Match @handle: the mention character followed by 1-50 handle chars.
         'pattern' => '/(?<!\\w)@([A-Za-z0-9_.\\-]{1,50})/',
         'pool' => [
-            ['model' => 'App\\Models\\User', 'column' => 'username'],
+            ['column' => 'username'],
         ],
     ],
 
