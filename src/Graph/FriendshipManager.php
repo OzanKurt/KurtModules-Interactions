@@ -6,6 +6,8 @@ namespace Kurt\Modules\Interactions\Graph;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Kurt\Modules\Interactions\Events\FriendRequestAccepted;
+use Kurt\Modules\Interactions\Events\FriendRequested;
 use Kurt\Modules\Interactions\Graph\Enums\FriendshipStatus;
 use Kurt\Modules\Interactions\Graph\Models\Friendship;
 
@@ -18,18 +20,30 @@ final class FriendshipManager
 {
     public function befriend(Model $sender, Model $recipient): Friendship
     {
-        return Friendship::query()->firstOrCreate(
+        $friendship = Friendship::query()->firstOrCreate(
             ['sender_id' => $sender->getKey(), 'recipient_id' => $recipient->getKey()],
             ['status' => FriendshipStatus::Pending->value],
         );
+
+        if ($friendship->wasRecentlyCreated) {
+            event(new FriendRequested($sender, $recipient));
+        }
+
+        return $friendship;
     }
 
     public function accept(Model $recipient, Model $sender): bool
     {
-        return $this->pending($sender, $recipient)->update([
+        $accepted = $this->pending($sender, $recipient)->update([
             'status' => FriendshipStatus::Accepted->value,
             'accepted_at' => now(),
         ]) > 0;
+
+        if ($accepted) {
+            event(new FriendRequestAccepted($sender, $recipient));
+        }
+
+        return $accepted;
     }
 
     public function deny(Model $recipient, Model $sender): bool

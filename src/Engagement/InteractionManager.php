@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 use Kurt\Modules\Interactions\Engagement\Enums\InteractionType;
 use Kurt\Modules\Interactions\Engagement\Models\Interaction;
 use Kurt\Modules\Interactions\Engagement\Models\Rating;
+use Kurt\Modules\Interactions\Events\Followed;
+use Kurt\Modules\Interactions\Events\Liked;
+use Kurt\Modules\Interactions\Events\Rated;
+use Kurt\Modules\Interactions\Events\Voted;
 
 /**
  * Single write path for engagement. Every verb is idempotent via
@@ -31,6 +35,18 @@ final class InteractionManager
         );
 
         $this->counters->sync($subject, $type);
+
+        if ($interaction->wasRecentlyCreated) {
+            match ($type) {
+                InteractionType::Follow => event(new Followed($user, $subject)),
+                InteractionType::Like => event(new Liked($user, $subject)),
+                default => null,
+            };
+        }
+
+        if ($type === InteractionType::Vote) {
+            event(new Voted($user, $subject, (int) $value));
+        }
 
         return $interaction;
     }
@@ -63,7 +79,7 @@ final class InteractionManager
 
     public function rate(Model $user, Model $subject, int $score): Rating
     {
-        return Rating::query()->updateOrCreate(
+        $rating = Rating::query()->updateOrCreate(
             [
                 'user_id' => $user->getKey(),
                 'subject_type' => $subject->getMorphClass(),
@@ -71,6 +87,10 @@ final class InteractionManager
             ],
             ['score' => $score],
         );
+
+        event(new Rated($user, $subject, $score));
+
+        return $rating;
     }
 
     public function removeRating(Model $user, Model $subject): bool

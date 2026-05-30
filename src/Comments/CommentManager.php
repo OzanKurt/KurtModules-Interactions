@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Kurt\Modules\Interactions\Comments\Enums\CommentStatus;
 use Kurt\Modules\Interactions\Comments\Models\Comment;
 use Kurt\Modules\Interactions\Comments\Models\CommentRevision;
+use Kurt\Modules\Interactions\Events\Commented;
+use Kurt\Modules\Interactions\Events\CommentReplied;
 use Kurt\Modules\Interactions\Mentions\MentionParser;
 
 /**
@@ -32,6 +34,12 @@ final class CommentManager
         $comment->save();
 
         $this->mentions->syncFor($comment, $body);
+
+        event(new Commented($comment));
+
+        if ($parent !== null) {
+            event(new CommentReplied($comment, $parent));
+        }
 
         return $comment;
     }

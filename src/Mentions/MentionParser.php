@@ -7,6 +7,7 @@ namespace Kurt\Modules\Interactions\Mentions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Kurt\Modules\Core\Contracts\UserResolver;
+use Kurt\Modules\Interactions\Events\UserMentioned;
 use Kurt\Modules\Interactions\Mentions\Models\Mention;
 
 /**
@@ -64,14 +65,19 @@ final class MentionParser
         $users = $this->parse($text);
         $ids = array_map(static fn (Model $user): mixed => $user->getKey(), $users);
 
-        $stale = Mention::query()
+        $base = Mention::query()
             ->where('mentionable_type', $mentionable->getMorphClass())
             ->where('mentionable_id', $mentionable->getKey());
 
+        $existing = array_map(
+            static fn ($id): int => (int) $id,
+            (clone $base)->pluck('mentioned_user_id')->all(),
+        );
+
+        $stale = clone $base;
         if ($ids !== []) {
             $stale->whereNotIn('mentioned_user_id', $ids);
         }
-
         $stale->delete();
 
         foreach ($users as $user) {
@@ -80,6 +86,10 @@ final class MentionParser
                 'mentionable_id' => $mentionable->getKey(),
                 'mentioned_user_id' => $user->getKey(),
             ]);
+
+            if (! in_array((int) $user->getKey(), $existing, true)) {
+                event(new UserMentioned($user, $mentionable));
+            }
         }
 
         return $users;

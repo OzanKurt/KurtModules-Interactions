@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kurt\Modules\Interactions\Providers;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Kurt\Modules\Core\Providers\PackageServiceProvider;
 use Kurt\Modules\Interactions\Comments\CommentManager;
 use Kurt\Modules\Interactions\Comments\CommentRenderer;
@@ -13,7 +14,9 @@ use Kurt\Modules\Interactions\Engagement\InteractionManager;
 use Kurt\Modules\Interactions\Engagement\ReactionManager;
 use Kurt\Modules\Interactions\Graph\FriendshipManager;
 use Kurt\Modules\Interactions\Graph\GroupManager;
+use Kurt\Modules\Interactions\Listeners\InteractionNotificationSubscriber;
 use Kurt\Modules\Interactions\Mentions\MentionParser;
+use Kurt\Modules\Interactions\Support\Interactions;
 use Spatie\LaravelPackageTools\Package;
 
 final class InteractionsServiceProvider extends PackageServiceProvider
@@ -42,5 +45,15 @@ final class InteractionsServiceProvider extends PackageServiceProvider
         $this->app->singleton(CommentManager::class);
         $this->app->singleton(FriendshipManager::class);
         $this->app->singleton(GroupManager::class);
+        $this->app->singleton(Interactions::class);
+    }
+
+    public function packageBooted(): void
+    {
+        if ((bool) config('interactions.notifications.enabled', false)) {
+            /** @var Dispatcher $events */
+            $events = $this->app->make(Dispatcher::class);
+            $events->subscribe(InteractionNotificationSubscriber::class);
+        }
     }
 }

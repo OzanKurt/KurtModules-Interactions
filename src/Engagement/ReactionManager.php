@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Kurt\Modules\Interactions\Emoji\EmojiResolver;
 use Kurt\Modules\Interactions\Engagement\Exceptions\InvalidReaction;
 use Kurt\Modules\Interactions\Engagement\Models\Reaction;
+use Kurt\Modules\Interactions\Events\Reacted;
 
 /**
  * Write path for emoji reactions. Reacting with the same emoji twice is
@@ -25,7 +26,7 @@ final class ReactionManager
         $this->emoji->validate($emoji);
         $this->enforceMax($user, $reactable, $emoji);
 
-        return Reaction::query()->updateOrCreate(
+        $reaction = Reaction::query()->updateOrCreate(
             [
                 'user_id' => $user->getKey(),
                 'reactable_type' => $reactable->getMorphClass(),
@@ -34,6 +35,12 @@ final class ReactionManager
             ],
             ['custom_emoji_id' => $this->emoji->customEmojiId($emoji)],
         );
+
+        if ($reaction->wasRecentlyCreated) {
+            event(new Reacted($user, $reactable, $emoji));
+        }
+
+        return $reaction;
     }
 
     public function unreact(Model $user, Model $reactable, string $emoji): bool
