@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Kurt\Modules\Interactions\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
+use Kurt\Modules\Interactions\Comments\CommentManager;
+use Kurt\Modules\Interactions\Comments\Models\Comment;
 use Kurt\Modules\Interactions\Engagement\Enums\InteractionType;
 use Kurt\Modules\Interactions\Engagement\InteractionManager;
 use Kurt\Modules\Interactions\Engagement\Models\Interaction;
@@ -48,6 +50,11 @@ trait Interactor
     public function hasReactedWith(Model $subject, string $emoji): bool
     {
         return $this->reactionManager()->has($this, $subject, $emoji);
+    }
+
+    public function comment(Model $subject, string $body, ?Comment $parent = null): Comment
+    {
+        return app(CommentManager::class)->create($this, $subject, $body, $parent);
     }
 
     public function follow(Model $subject): Interaction

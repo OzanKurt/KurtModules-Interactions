@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kurt\Modules\Interactions\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
+use Kurt\Modules\Interactions\Comments\Concerns\Commentable;
 use Kurt\Modules\Interactions\Engagement\Concerns\Favoritable;
 use Kurt\Modules\Interactions\Engagement\Concerns\Followable;
 use Kurt\Modules\Interactions\Engagement\Concerns\HasInteractions;
@@ -23,6 +24,7 @@ use Kurt\Modules\Interactions\Engagement\Concerns\Voteable;
  */
 trait Interactable
 {
+    use Commentable;
     use Favoritable;
     use Followable;
     use HasInteractions;

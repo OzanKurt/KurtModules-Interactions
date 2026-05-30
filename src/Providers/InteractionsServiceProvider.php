@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Kurt\Modules\Interactions\Providers;
 
 use Kurt\Modules\Core\Providers\PackageServiceProvider;
+use Kurt\Modules\Interactions\Comments\CommentManager;
+use Kurt\Modules\Interactions\Comments\CommentRenderer;
 use Kurt\Modules\Interactions\Emoji\EmojiResolver;
 use Kurt\Modules\Interactions\Engagement\CounterSync;
 use Kurt\Modules\Interactions\Engagement\InteractionManager;
 use Kurt\Modules\Interactions\Engagement\ReactionManager;
+use Kurt\Modules\Interactions\Mentions\MentionParser;
 use Spatie\LaravelPackageTools\Package;
 
 final class InteractionsServiceProvider extends PackageServiceProvider
@@ -32,5 +35,8 @@ final class InteractionsServiceProvider extends PackageServiceProvider
         $this->app->singleton(InteractionManager::class);
         $this->app->singleton(EmojiResolver::class);
         $this->app->singleton(ReactionManager::class);
+        $this->app->singleton(MentionParser::class);
+        $this->app->singleton(CommentRenderer::class);
+        $this->app->singleton(CommentManager::class);
     }
 }
