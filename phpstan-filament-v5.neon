@@ -1,0 +1,9 @@
+includes:
+    - phpstan.neon
+
+parameters:
+    excludePaths:
+        analyseAndScan!:
+            - src/Filament/V3 (?)
+            - src/Filament/V4 (?)
+            - src/Filament/InteractionsPlugin.php (?)

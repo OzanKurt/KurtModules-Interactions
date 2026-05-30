@@ -2,6 +2,17 @@
 
 All notable changes to `ozankurt/laravel-modules-interactions` are documented here.
 
+## v1.1.0
+
+### Filament admin (v3 · v4 · v5)
+
+- `CommentResource` — moderation: approve / mark-spam / delete, status filter;
+  create disabled (comments are authored via the API/manager).
+- `CustomEmojiResource` — full CRUD for custom reaction emoji.
+- `FriendshipResource` — read-only graph overview, status filter.
+- Version-dispatching `InteractionsPlugin::make()`; per-Filament-major PHPStan
+  configs + guarded introspection smoke tests; CI analyses each version dir.
+
 ## v1.0.0
 
 Initial release — polymorphic social & engagement toolkit (headless).

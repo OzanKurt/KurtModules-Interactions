@@ -6,7 +6,7 @@ Eloquent model opts in via traits to gain emoji reactions, threaded comments,
 subscribe / follow), and a social graph (friendships + friend groups).
 
 Part of the **KurtModules** family. Headless by design, with an optional Filament
-admin (v3/v4/v5, shipping in v1.1). Core-only hard dependency.
+admin (Filament 3, 4 & 5). Core-only hard dependency.
 
 Inspired by [laravel-acquaintances](https://github.com/multicaret/laravel-acquaintances),
 overtrue's social suite, [laravel-reactions](https://github.com/qirolab/laravel-reactions),
@@ -136,6 +136,21 @@ use Kurt\Modules\Interactions\Facades\Interactions;
 Interactions::reactions()->summary($post);
 Interactions::friendships()->areFriends($alice, $bob);
 ```
+
+## Filament admin (optional)
+
+Register the version-dispatching plugin on a panel — the same call works on
+Filament 3, 4, and 5:
+
+```php
+use Kurt\Modules\Interactions\Filament\InteractionsPlugin;
+
+$panel->plugin(InteractionsPlugin::make());
+```
+
+It adds a **Comments** resource (moderate: approve / mark-spam / delete, filter
+by status; create disabled — comments come from the API/manager), a
+**Custom emoji** resource (full CRUD), and a read-only **Friendships** overview.
 
 ## Configuration
 
