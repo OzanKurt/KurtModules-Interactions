@@ -11,6 +11,8 @@ use Kurt\Modules\Interactions\Emoji\EmojiResolver;
 use Kurt\Modules\Interactions\Engagement\CounterSync;
 use Kurt\Modules\Interactions\Engagement\InteractionManager;
 use Kurt\Modules\Interactions\Engagement\ReactionManager;
+use Kurt\Modules\Interactions\Graph\FriendshipManager;
+use Kurt\Modules\Interactions\Graph\GroupManager;
 use Kurt\Modules\Interactions\Mentions\MentionParser;
 use Spatie\LaravelPackageTools\Package;
 
@@ -38,5 +40,7 @@ final class InteractionsServiceProvider extends PackageServiceProvider
         $this->app->singleton(MentionParser::class);
         $this->app->singleton(CommentRenderer::class);
         $this->app->singleton(CommentManager::class);
+        $this->app->singleton(FriendshipManager::class);
+        $this->app->singleton(GroupManager::class);
     }
 }

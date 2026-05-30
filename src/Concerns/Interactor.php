@@ -13,15 +13,18 @@ use Kurt\Modules\Interactions\Engagement\Models\Interaction;
 use Kurt\Modules\Interactions\Engagement\Models\Rating;
 use Kurt\Modules\Interactions\Engagement\Models\Reaction;
 use Kurt\Modules\Interactions\Engagement\ReactionManager;
+use Kurt\Modules\Interactions\Graph\Concerns\HasGraph;
 
 /**
- * The actor surface: the verbs a user performs on any target model. Reaction,
- * comment and mention verbs are folded in by their phases.
+ * The actor surface: the verbs a user performs on any target model — engagement,
+ * reactions, comments, and (via HasGraph) the social graph.
  *
  * @mixin Model
  */
 trait Interactor
 {
+    use HasGraph;
+
     protected function interactionManager(): InteractionManager
     {
         return app(InteractionManager::class);
