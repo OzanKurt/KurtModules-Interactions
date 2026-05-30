@@ -9,6 +9,8 @@ use Kurt\Modules\Interactions\Engagement\Enums\InteractionType;
 use Kurt\Modules\Interactions\Engagement\InteractionManager;
 use Kurt\Modules\Interactions\Engagement\Models\Interaction;
 use Kurt\Modules\Interactions\Engagement\Models\Rating;
+use Kurt\Modules\Interactions\Engagement\Models\Reaction;
+use Kurt\Modules\Interactions\Engagement\ReactionManager;
 
 /**
  * The actor surface: the verbs a user performs on any target model. Reaction,
@@ -21,6 +23,31 @@ trait Interactor
     protected function interactionManager(): InteractionManager
     {
         return app(InteractionManager::class);
+    }
+
+    protected function reactionManager(): ReactionManager
+    {
+        return app(ReactionManager::class);
+    }
+
+    public function reactWith(Model $subject, string $emoji): Reaction
+    {
+        return $this->reactionManager()->react($this, $subject, $emoji);
+    }
+
+    public function unreact(Model $subject, string $emoji): bool
+    {
+        return $this->reactionManager()->unreact($this, $subject, $emoji);
+    }
+
+    public function toggleReaction(Model $subject, string $emoji): bool
+    {
+        return $this->reactionManager()->toggle($this, $subject, $emoji);
+    }
+
+    public function hasReactedWith(Model $subject, string $emoji): bool
+    {
+        return $this->reactionManager()->has($this, $subject, $emoji);
     }
 
     public function follow(Model $subject): Interaction

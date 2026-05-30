@@ -10,6 +10,7 @@ use Kurt\Modules\Interactions\Engagement\Concerns\Followable;
 use Kurt\Modules\Interactions\Engagement\Concerns\HasInteractions;
 use Kurt\Modules\Interactions\Engagement\Concerns\Likeable;
 use Kurt\Modules\Interactions\Engagement\Concerns\Rateable;
+use Kurt\Modules\Interactions\Engagement\Concerns\Reactable;
 use Kurt\Modules\Interactions\Engagement\Concerns\Subscribable;
 use Kurt\Modules\Interactions\Engagement\Concerns\Voteable;
 
@@ -27,6 +28,7 @@ trait Interactable
     use HasInteractions;
     use Likeable;
     use Rateable;
+    use Reactable;
     use Subscribable;
     use Voteable;
 }
