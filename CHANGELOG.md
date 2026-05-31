@@ -2,6 +2,15 @@
 
 All notable changes to `ozankurt/laravel-modules-interactions` are documented here.
 
+## v1.2.0
+
+### Added
+
+- Comment moderation audit: `moderated_by` + `moderated_at` columns on
+  `interactions_comments`, a `Comment::moderatedBy()` relation, and an optional
+  `$moderator` argument to `CommentManager::moderate()` that records who
+  moderated and when. Lets consuming modules (e.g. Blog) keep an approver trail.
+
 ## v1.1.0
 
 ### Filament admin (v3 · v4 · v5)

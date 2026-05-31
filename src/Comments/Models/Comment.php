@@ -28,6 +28,8 @@ use Kurt\Modules\Interactions\Mentions\Concerns\Mentionable;
  * @property int|null $parent_id
  * @property string $body
  * @property CommentStatus $status
+ * @property int|null $moderated_by
+ * @property Carbon|null $moderated_at
  * @property Carbon|null $edited_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -43,11 +45,12 @@ class Comment extends Model
     protected $table = 'interactions_comments';
 
     /** @var list<string> */
-    protected $fillable = ['user_id', 'commentable_type', 'commentable_id', 'parent_id', 'body', 'status', 'edited_at'];
+    protected $fillable = ['user_id', 'commentable_type', 'commentable_id', 'parent_id', 'body', 'status', 'moderated_by', 'moderated_at', 'edited_at'];
 
     /** @var array<string, string> */
     protected $casts = [
         'status' => CommentStatus::class,
+        'moderated_at' => 'datetime',
         'edited_at' => 'datetime',
     ];
 
@@ -57,6 +60,16 @@ class Comment extends Model
     public function author(): BelongsTo
     {
         return $this->userBelongsTo();
+    }
+
+    /**
+     * The user who last moderated this comment (approved / marked spam / etc.).
+     *
+     * @return BelongsTo<Model, $this>
+     */
+    public function moderatedBy(): BelongsTo
+    {
+        return $this->userBelongsTo('moderated_by');
     }
 
     /**

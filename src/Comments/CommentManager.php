@@ -60,9 +60,13 @@ final class CommentManager
         return $comment;
     }
 
-    public function moderate(Comment $comment, CommentStatus $status): Comment
+    public function moderate(Comment $comment, CommentStatus $status, ?Model $moderator = null): Comment
     {
-        $comment->update(['status' => $status->value]);
+        $comment->update([
+            'status' => $status->value,
+            'moderated_by' => $moderator?->getKey(),
+            'moderated_at' => now(),
+        ]);
 
         return $comment;
     }

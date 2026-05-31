@@ -28,6 +28,20 @@ it('creates a comment and renders markdown', function () {
     expect($comment->renderedBody())->toContain('<strong>post</strong>');
 });
 
+it('records the moderator and timestamp when moderating', function () {
+    $moderator = author('Mod');
+    $post = Post::create(['title' => 'X']);
+    $comment = $moderator->comment($post, 'spammy');
+
+    app(CommentManager::class)->moderate($comment, CommentStatus::Spam, $moderator);
+    $comment->refresh();
+
+    expect($comment->status)->toBe(CommentStatus::Spam);
+    expect($comment->moderated_by)->toBe($moderator->id);
+    expect($comment->moderated_at)->not->toBeNull();
+    expect($comment->moderatedBy->is($moderator))->toBeTrue();
+});
+
 it('threads replies under a parent', function () {
     $user = author();
     $post = Post::create(['title' => 'X']);
