@@ -26,6 +26,23 @@ it('records mentions parsed from a comment body', function () {
     expect($comment->mentionedUserIds())->toBe([$bob->id]);
 });
 
+it('tracks a seen-at read receipt on mentions', function () {
+    $al = mentionUser('alms');
+    $bob = mentionUser('bobms');
+    $post = Post::create(['title' => 'X']);
+
+    $comment = $al->comment($post, 'ping @bobms');
+    $mention = $comment->mentions()->first();
+
+    expect($mention->seen_at)->toBeNull();
+    expect($comment->mentions()->unseen()->count())->toBe(1);
+
+    $mention->markSeen();
+
+    expect($mention->fresh()->seen_at)->not->toBeNull();
+    expect($comment->mentions()->unseen()->count())->toBe(0);
+});
+
 it('ignores unknown handles', function () {
     $al = mentionUser('alm2');
     $post = Post::create(['title' => 'X']);

@@ -2,6 +2,14 @@
 
 All notable changes to `ozankurt/laravel-modules-interactions` are documented here.
 
+## v1.3.0
+
+### Added
+
+- Mention read receipts: a nullable `seen_at` column on `interactions_mentions`,
+  a `Mention::markSeen()` helper, and a `scopeUnseen()` query scope. Lets
+  consuming modules (e.g. chat) track which mentions a user has seen.
+
 ## v1.2.0
 
 ### Added
