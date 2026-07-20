@@ -12,6 +12,7 @@ use Kurt\Modules\Interactions\Engagement\Models\Counter;
 use Kurt\Modules\Interactions\Engagement\Models\Interaction;
 use Kurt\Modules\Interactions\Engagement\Models\Rating;
 use Kurt\Modules\Interactions\Engagement\Models\Reaction;
+use Kurt\Modules\Interactions\Engagement\Models\ReactionCounter;
 
 /**
  * Base for any model that receives engagement. Provides the polymorphic
@@ -51,6 +52,11 @@ trait HasInteractions
                 ->delete();
 
             Reaction::query()
+                ->where('reactable_type', $morphType)
+                ->where('reactable_id', $key)
+                ->delete();
+
+            ReactionCounter::query()
                 ->where('reactable_type', $morphType)
                 ->where('reactable_id', $key)
                 ->delete();

@@ -6,6 +6,7 @@ namespace Kurt\Modules\Interactions\Engagement;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Kurt\Modules\Interactions\Emoji\EmojiResolver;
 use Kurt\Modules\Interactions\Engagement\Exceptions\InvalidReaction;
 use Kurt\Modules\Interactions\Engagement\Models\Reaction;
@@ -18,7 +19,10 @@ use Kurt\Modules\Interactions\Events\Reacted;
  */
 final class ReactionManager
 {
-    public function __construct(private readonly EmojiResolver $emoji) {}
+    public function __construct(
+        private readonly EmojiResolver $emoji,
+        private readonly ReactionCounterSync $counters,
+    ) {}
 
     public function react(Model $user, Model $reactable, string $emoji): Reaction
     {
@@ -26,15 +30,27 @@ final class ReactionManager
         $this->emoji->validate($emoji);
         $this->enforceMax($user, $reactable, $emoji);
 
-        $reaction = Reaction::query()->updateOrCreate(
-            [
-                'user_id' => $user->getKey(),
-                'reactable_type' => $reactable->getMorphClass(),
-                'reactable_id' => $reactable->getKey(),
-                'emoji' => $emoji,
-            ],
-            ['custom_emoji_id' => $this->emoji->customEmojiId($emoji)],
-        );
+        // The row write and its counter bump must land together so concurrent
+        // writers can't lost-update the denormalized per-emoji tally.
+        $reaction = DB::transaction(function () use ($user, $reactable, $emoji): Reaction {
+            $reaction = Reaction::query()->updateOrCreate(
+                [
+                    'user_id' => $user->getKey(),
+                    'reactable_type' => $reactable->getMorphClass(),
+                    'reactable_id' => $reactable->getKey(),
+                    'emoji' => $emoji,
+                ],
+                ['custom_emoji_id' => $this->emoji->customEmojiId($emoji)],
+            );
+
+            // Only a brand-new row moves the tally; re-reacting with a held emoji
+            // is a no-op and must not double-count.
+            if ($reaction->wasRecentlyCreated) {
+                $this->counters->increment($reactable, $emoji);
+            }
+
+            return $reaction;
+        });
 
         if ($reaction->wasRecentlyCreated) {
             event(new Reacted($user, $reactable, $emoji));
@@ -45,7 +61,17 @@ final class ReactionManager
 
     public function unreact(Model $user, Model $reactable, string $emoji): bool
     {
-        return $this->query($user, $reactable, trim($emoji))->delete() > 0;
+        $emoji = trim($emoji);
+
+        return DB::transaction(function () use ($user, $reactable, $emoji): bool {
+            $deleted = $this->query($user, $reactable, $emoji)->delete() > 0;
+
+            if ($deleted) {
+                $this->counters->decrement($reactable, $emoji);
+            }
+
+            return $deleted;
+        });
     }
 
     public function toggle(Model $user, Model $reactable, string $emoji): bool
@@ -67,24 +93,15 @@ final class ReactionManager
     }
 
     /**
+     * Per-emoji counts, e.g. ['🎉' => 5, ':party:' => 2]. Served from the
+     * denormalized cache when the counter table is maintained, with a live
+     * aggregate fallback otherwise; the return shape is identical either way.
+     *
      * @return array<string, int>
      */
     public function summary(Model $reactable): array
     {
-        $counts = Reaction::query()
-            ->where('reactable_type', $reactable->getMorphClass())
-            ->where('reactable_id', $reactable->getKey())
-            ->groupBy('emoji')
-            ->selectRaw('emoji, COUNT(*) as aggregate')
-            ->pluck('aggregate', 'emoji');
-
-        $summary = [];
-
-        foreach ($counts as $emoji => $count) {
-            $summary[(string) $emoji] = (int) $count;
-        }
-
-        return $summary;
+        return $this->counters->summary($reactable);
     }
 
     private function enforceMax(Model $user, Model $reactable, string $emoji): void
