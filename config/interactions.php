@@ -33,6 +33,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | HTTP / REST API
+    |--------------------------------------------------------------------------
+    |
+    | The out-of-the-box JSON API, built on the Core API kit. Safe-by-default:
+    | 'mode' = 'headless' registers nothing. Set INTERACTIONS_HTTP_MODE=api (or
+    | 'ui') to expose the endpoints. Reads over the denormalized data are public;
+    | every write (and the per-user engagement state) requires the auth
+    | middleware, so a host can layer its own guard/policy via route middleware.
+    |
+    | Endpoints address a polymorphic subject by {type}/{id}, where {type} is a
+    | morph alias registered in the host's morph map; unmapped types are 404.
+    |
+    */
+    'http' => [
+        'mode' => env('INTERACTIONS_HTTP_MODE', 'headless'),
+        'prefix' => 'api/interactions',
+        'middleware' => ['api'],
+        'auth_middleware' => ['auth'],
+        'rate_limit' => '60,1',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Engagement
     |--------------------------------------------------------------------------
     |
