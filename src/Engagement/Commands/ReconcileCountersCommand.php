@@ -8,19 +8,22 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Kurt\Modules\Interactions\Engagement\Models\Counter;
 use Kurt\Modules\Interactions\Engagement\Models\Interaction;
+use Kurt\Modules\Interactions\Engagement\ReactionCounterSync;
 
 /**
- * Rewrites every denormalized counter from a live COUNT(*) over the
- * interactions table. Run periodically when the atomic counter driver is in use
- * to bound any drift, or after a bulk import that bypassed the write path.
+ * Rewrites every denormalized counter from a live COUNT(*) over the source
+ * tables. Run periodically when the atomic counter driver is in use to bound any
+ * drift, or after a bulk import that bypassed the write path. Covers both
+ * engagement counters (over the interactions table) and reaction counters (over
+ * the reactions table).
  */
 final class ReconcileCountersCommand extends Command
 {
     protected $signature = 'interactions:reconcile';
 
-    protected $description = 'Rewrite all engagement counters from live interaction counts.';
+    protected $description = 'Rewrite all engagement and reaction counters from live counts.';
 
-    public function handle(): int
+    public function handle(ReactionCounterSync $reactionCounters): int
     {
         $table = (new Interaction)->getTable();
 
@@ -47,6 +50,10 @@ final class ReconcileCountersCommand extends Command
         });
 
         $this->info("Reconciled {$groups->count()} counter(s) from live interaction counts.");
+
+        $reactionGroups = $reactionCounters->reconcile();
+
+        $this->info("Reconciled {$reactionGroups} reaction counter(s) from live reaction counts.");
 
         return self::SUCCESS;
     }

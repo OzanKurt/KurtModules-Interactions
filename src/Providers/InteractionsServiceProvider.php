@@ -12,6 +12,7 @@ use Kurt\Modules\Interactions\Emoji\EmojiResolver;
 use Kurt\Modules\Interactions\Engagement\Commands\ReconcileCountersCommand;
 use Kurt\Modules\Interactions\Engagement\CounterSync;
 use Kurt\Modules\Interactions\Engagement\InteractionManager;
+use Kurt\Modules\Interactions\Engagement\ReactionCounterSync;
 use Kurt\Modules\Interactions\Engagement\ReactionManager;
 use Kurt\Modules\Interactions\Graph\FriendshipManager;
 use Kurt\Modules\Interactions\Graph\GroupManager;
@@ -41,6 +42,7 @@ final class InteractionsServiceProvider extends PackageServiceProvider
         $this->app->singleton(CounterSync::class);
         $this->app->singleton(InteractionManager::class);
         $this->app->singleton(EmojiResolver::class);
+        $this->app->singleton(ReactionCounterSync::class);
         $this->app->singleton(ReactionManager::class);
         $this->app->singleton(MentionParser::class);
         $this->app->singleton(CommentRenderer::class);

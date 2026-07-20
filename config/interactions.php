@@ -68,6 +68,14 @@ return [
     |--------------------------------------------------------------------------
     | Reactions
     |--------------------------------------------------------------------------
+    |
+    | reactionSummary() is served from a denormalized per-(reactable, emoji)
+    | cache (interactions_reaction_counts) whenever the top-level
+    | 'counters.driver' is 'table'. That cache is maintained on react/unreact
+    | using the shared 'engagement.counters.driver' write strategy (recompute vs
+    | atomic) and rebuilt by `interactions:reconcile`. When 'counters.driver' is
+    | 'none' the summary falls back to a live aggregate over the reactions table.
+    |
     */
     'reactions' => [
         'allow_unicode' => true,

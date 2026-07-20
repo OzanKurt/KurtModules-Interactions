@@ -179,6 +179,13 @@ step with each write:
   It rewrites every counter from live interaction counts, so it is also useful
   after a bulk import that bypassed the write path.
 
+`reactionSummary()` is backed by the same machinery: a denormalized
+`interactions_reaction_counts` cache (per reactable + emoji) maintained on
+react/unreact using the `engagement.counters.driver` strategy, so summaries are
+served without a live `groupBy`. It falls back to a live aggregate when
+`counters.driver` is `none`, and `interactions:reconcile` rebuilds the reaction
+cache alongside the engagement counters.
+
 ### Cleanup on delete
 
 Models using `HasInteractions` (or the aggregate `Interactable`) purge their
