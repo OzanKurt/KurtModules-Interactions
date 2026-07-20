@@ -30,7 +30,7 @@ and [Laravel-Mentions](https://github.com/CrixuAMG/Laravel-Mentions).
 
 ## Requirements
 
-- PHP 8.4+, Laravel 12
+- PHP 8.3+, Laravel 12/13
 - [`ozankurt/laravel-modules-core`](https://github.com/OzanKurt/KurtModules-Core) ^2.0
 
 ## Installation
@@ -157,6 +157,34 @@ by status; create disabled — comments come from the API/manager), a
 See `config/interactions.php`: mention pool + pattern, reaction rules
 (unicode/custom/max), comment nesting/markdown/moderation defaults, graph
 toggles, counter driver, and notification channels.
+
+### Counters
+
+`counters.driver` chooses where totals live: `table` (denormalized
+`interactions_counters`, the default) or `none` (skip the table and read counts
+via a live query).
+
+When the table is used, `engagement.counters.driver` chooses how it is kept in
+step with each write:
+
+- `recompute` (default) – re-run a full `COUNT(*)` after each mutation.
+  Self-healing but O(n) per write.
+- `atomic` – O(1) in-transaction `increment`/`decrement` of the stored tally.
+  Run the reconcile command periodically to bound any drift:
+
+  ```bash
+  php artisan interactions:reconcile
+  ```
+
+  It rewrites every counter from live interaction counts, so it is also useful
+  after a bulk import that bypassed the write path.
+
+### Cleanup on delete
+
+Models using `HasInteractions` (or the aggregate `Interactable`) purge their
+interactions, ratings, reactions and counters automatically when the subject is
+deleted, so a removed subject leaves no orphaned engagement behind. Soft-deletes
+are skipped; the rows are reclaimed only on a real (force) delete.
 
 ## Testing
 

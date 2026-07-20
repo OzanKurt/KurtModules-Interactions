@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kurt\Modules\Interactions\Engagement;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Kurt\Modules\Interactions\Engagement\Enums\InteractionType;
 use Kurt\Modules\Interactions\Engagement\Models\Interaction;
 use Kurt\Modules\Interactions\Engagement\Models\Rating;
@@ -30,17 +31,27 @@ final class InteractionManager
             throw SelfInteractionException::for($type);
         }
 
-        $interaction = Interaction::query()->updateOrCreate(
-            [
-                'user_id' => $user->getKey(),
-                'subject_type' => $subject->getMorphClass(),
-                'subject_id' => $subject->getKey(),
-                'type' => $type->value,
-            ],
-            ['value' => $value],
-        );
+        // The row write and its counter bump must land together so concurrent
+        // writers can't lost-update the denormalized tally.
+        $interaction = DB::transaction(function () use ($user, $subject, $type, $value): Interaction {
+            $interaction = Interaction::query()->updateOrCreate(
+                [
+                    'user_id' => $user->getKey(),
+                    'subject_type' => $subject->getMorphClass(),
+                    'subject_id' => $subject->getKey(),
+                    'type' => $type->value,
+                ],
+                ['value' => $value],
+            );
 
-        $this->counters->sync($subject, $type);
+            // Only a brand-new row changes the tally; a value-only update
+            // (e.g. flipping a vote) leaves the row count untouched.
+            if ($interaction->wasRecentlyCreated) {
+                $this->counters->increment($subject, $type);
+            }
+
+            return $interaction;
+        });
 
         if ($interaction->wasRecentlyCreated) {
             match ($type) {
@@ -69,7 +80,7 @@ final class InteractionManager
             ->delete();
 
         if ($deleted > 0) {
-            $this->counters->sync($subject, $type);
+            $this->counters->decrement($subject, $type);
         }
 
         return $deleted > 0;

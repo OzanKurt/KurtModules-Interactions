@@ -9,6 +9,7 @@ use Kurt\Modules\Core\Providers\PackageServiceProvider;
 use Kurt\Modules\Interactions\Comments\CommentManager;
 use Kurt\Modules\Interactions\Comments\CommentRenderer;
 use Kurt\Modules\Interactions\Emoji\EmojiResolver;
+use Kurt\Modules\Interactions\Engagement\Commands\ReconcileCountersCommand;
 use Kurt\Modules\Interactions\Engagement\CounterSync;
 use Kurt\Modules\Interactions\Engagement\InteractionManager;
 use Kurt\Modules\Interactions\Engagement\ReactionManager;
@@ -31,6 +32,7 @@ final class InteractionsServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-modules-interactions')
             ->hasConfigFile('interactions')
+            ->hasCommand(ReconcileCountersCommand::class)
             ->discoversMigrations();
     }
 
