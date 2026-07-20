@@ -2,6 +2,24 @@
 
 All notable changes to `ozankurt/laravel-modules-interactions` are documented here.
 
+## Unreleased
+
+### Added
+
+- Out-of-the-box REST API, built on the Core API kit (Core `^2.2`). Safe by
+  default: nothing registers until `interactions.http.mode` is `api`/`ui`
+  (`INTERACTIONS_HTTP_MODE`). Action-oriented endpoints address a polymorphic
+  subject as `{type}/{id}`, where `{type}` is a morph alias resolved through the
+  host's morph map (unknown/unmapped types are `404`; an arbitrary class named in
+  the URL is never instantiated):
+  - Reactions: `POST`/`DELETE {type}/{id}/reactions`, `GET {type}/{id}/reactions/summary`.
+  - Engagement: `POST {type}/{id}/engagement/{kind}` (toggle),
+    `GET {type}/{id}/engagement`, `GET {type}/{id}/counts`.
+  Reads over the denormalized data are public; writes and the per-user state
+  require the configurable auth middleware. Writes flow through the existing
+  `ReactionManager` / `InteractionManager` so counters and summaries stay
+  consistent. See the README **API** section.
+
 ## v1.3.0
 
 ### Added

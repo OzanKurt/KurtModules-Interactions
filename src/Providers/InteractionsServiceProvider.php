@@ -59,5 +59,8 @@ final class InteractionsServiceProvider extends PackageServiceProvider
             $events = $this->app->make(Dispatcher::class);
             $events->subscribe(InteractionNotificationSubscriber::class);
         }
+
+        // Register the out-of-the-box REST API. A no-op in headless mode.
+        $this->registerModuleApi(__DIR__.'/../../routes/api.php');
     }
 }
