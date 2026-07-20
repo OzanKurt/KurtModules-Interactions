@@ -109,11 +109,13 @@ it('prevents self-interaction and leaves counters untouched', function () {
     expect(fn () => $alice->like($alice))->toThrow(SelfInteractionException::class);
     expect(fn () => $alice->upvote($alice))->toThrow(SelfInteractionException::class);
     expect(fn () => $alice->favorite($alice))->toThrow(SelfInteractionException::class);
+    expect(fn () => $alice->rate($alice, 4))->toThrow(SelfInteractionException::class);
 
     expect($alice->isFollowing($alice))->toBeFalse();
     expect($alice->hasLiked($alice))->toBeFalse();
     expect($alice->hasVoted($alice))->toBeFalse();
     expect($alice->hasFavorited($alice))->toBeFalse();
+    expect($alice->ratingForMe($alice))->toBeNull();
 });
 
 it('allows self-interaction when configured', function () {
