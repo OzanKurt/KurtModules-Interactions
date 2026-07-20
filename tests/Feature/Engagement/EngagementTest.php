@@ -175,3 +175,25 @@ it('maintains the denormalized counter table', function () {
 
     expect((int) $count)->toBe(1);
 });
+
+it('counts likes across many users and follows removals down', function () {
+    $post = makePost();
+    $alice = makeUser('Alice');
+    $bob = makeUser('Bob');
+    $carol = makeUser('Carol');
+
+    $alice->like($post);
+    $bob->like($post);
+    $carol->like($post);
+    expect($post->likesCount())->toBe(3);
+
+    $bob->unlike($post);
+    expect($post->fresh()->likesCount())->toBe(2);
+
+    $stored = Counter::query()
+        ->where('subject_id', $post->id)
+        ->where('type', 'like')
+        ->value('count');
+
+    expect((int) $stored)->toBe(2);
+});

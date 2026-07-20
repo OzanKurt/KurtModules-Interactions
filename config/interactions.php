@@ -44,10 +44,20 @@ return [
     |   change any counters and raises a SelfInteractionException.
     | 'rating' – inclusive score bounds enforced by rate(); scores outside the
     |   range are rejected before they reach the storage column.
+    | 'counters.driver' – how the denormalized counters are kept in step with a
+    |   write (only relevant when the top-level 'counters.driver' is 'table'):
+    |     'recompute' – re-run a full COUNT(*) after each mutation. O(n) per
+    |        write but self-healing; the safe default.
+    |     'atomic'    – in-transaction increment/decrement of the stored tally.
+    |        O(1) per write; run `interactions:reconcile` periodically to bound
+    |        any drift.
     |
     */
     'engagement' => [
         'allow_self_interaction' => false,
+        'counters' => [
+            'driver' => 'recompute',
+        ],
         'rating' => [
             'min' => 1,
             'max' => 5,
