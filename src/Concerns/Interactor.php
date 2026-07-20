@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kurt\Modules\Interactions\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Kurt\Modules\Interactions\Comments\CommentManager;
 use Kurt\Modules\Interactions\Comments\Models\Comment;
 use Kurt\Modules\Interactions\Engagement\Enums\InteractionType;
@@ -77,16 +78,20 @@ trait Interactor
 
     public function like(Model $subject): Interaction
     {
-        $this->interactionManager()->remove($this, $subject, InteractionType::Dislike);
+        return DB::transaction(function () use ($subject): Interaction {
+            $this->interactionManager()->remove($this, $subject, InteractionType::Dislike);
 
-        return $this->interactionManager()->add($this, $subject, InteractionType::Like);
+            return $this->interactionManager()->add($this, $subject, InteractionType::Like);
+        });
     }
 
     public function dislike(Model $subject): Interaction
     {
-        $this->interactionManager()->remove($this, $subject, InteractionType::Like);
+        return DB::transaction(function () use ($subject): Interaction {
+            $this->interactionManager()->remove($this, $subject, InteractionType::Like);
 
-        return $this->interactionManager()->add($this, $subject, InteractionType::Dislike);
+            return $this->interactionManager()->add($this, $subject, InteractionType::Dislike);
+        });
     }
 
     public function unlike(Model $subject): bool
