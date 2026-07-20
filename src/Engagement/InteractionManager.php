@@ -87,6 +87,10 @@ final class InteractionManager
 
     public function rate(Model $user, Model $subject, int $score): Rating
     {
+        if ($this->isSelfInteraction($user, $subject)) {
+            throw SelfInteractionException::forRating();
+        }
+
         $this->guardRatingRange($score);
 
         $rating = Rating::query()->updateOrCreate(

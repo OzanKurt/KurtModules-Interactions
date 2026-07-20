@@ -20,4 +20,9 @@ final class SelfInteractionException extends InvalidArgumentException
     {
         return new self("A user cannot {$type->value} themselves.");
     }
+
+    public static function forRating(): self
+    {
+        return new self('A user cannot rate themselves.');
+    }
 }
