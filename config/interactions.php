@@ -33,6 +33,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Engagement
+    |--------------------------------------------------------------------------
+    |
+    | Rules for the single engagement write path (likes, votes, favorites,
+    | follows, ratings, ...).
+    |
+    | 'allow_self_interaction' – when false (default) a user cannot
+    |   follow/like/vote/favorite/... their own model; attempting to does not
+    |   change any counters and raises a SelfInteractionException.
+    | 'rating' – inclusive score bounds enforced by rate(); scores outside the
+    |   range are rejected before they reach the storage column.
+    |
+    */
+    'engagement' => [
+        'allow_self_interaction' => false,
+        'rating' => [
+            'min' => 1,
+            'max' => 5,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Reactions
     |--------------------------------------------------------------------------
     */
