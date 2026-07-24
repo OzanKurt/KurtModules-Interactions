@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kurt\Modules\Interactions\Providers;
 
 use Illuminate\Contracts\Events\Dispatcher;
+use Kurt\Modules\Core\Modules\ModuleManifest;
 use Kurt\Modules\Core\Providers\PackageServiceProvider;
 use Kurt\Modules\Interactions\Comments\CommentManager;
 use Kurt\Modules\Interactions\Comments\CommentRenderer;
@@ -52,8 +53,17 @@ final class InteractionsServiceProvider extends PackageServiceProvider
         $this->app->singleton(Interactions::class);
     }
 
+    protected function moduleManifest(): ?ModuleManifest
+    {
+        return ModuleManifest::make('interactions')
+            ->name('Interactions')
+            ->description('Polymorphic social & engagement toolkit for Laravel: emoji reactions, comments, @mentions, likes/votes/ratings/favorites/subscriptions, and a follows/friendships social graph. Headless + optional Filament admin.');
+    }
+
     public function packageBooted(): void
     {
+        parent::packageBooted();
+
         if ((bool) config('interactions.notifications.enabled', false)) {
             /** @var Dispatcher $events */
             $events = $this->app->make(Dispatcher::class);
