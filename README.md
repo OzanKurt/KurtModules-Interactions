@@ -32,7 +32,7 @@ and [Laravel-Mentions](https://github.com/CrixuAMG/Laravel-Mentions).
 
 ## Requirements
 
-- PHP 8.3+, Laravel 12/13
+- PHP 8.4+, Laravel 13
 - [`ozankurt/laravel-modules-core`](https://github.com/OzanKurt/KurtModules-Core) ^2.0
 
 ## Installation

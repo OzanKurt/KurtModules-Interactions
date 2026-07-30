@@ -4,6 +4,17 @@ All notable changes to `ozankurt/laravel-modules-interactions` are documented he
 
 ## Unreleased
 
+### Changed
+
+- **BREAKING** — requires Laravel 13, PHP 8.4 and `ozankurt/laravel-modules-core`
+  `^2.0`. Laravel 12 and PHP 8.3 are no longer supported. The test suite moves to
+  Pest 5 / Testbench 11, and CI now runs PHP 8.4 + Laravel 13 against Filament
+  3, 4 and 5.
+- Counter deltas now go through the query builder's `increment()`/`decrement()`
+  instead of an interpolated `DB::raw('count + (n)')` expression. Laravel 13
+  narrowed `Connection::raw()` to `float|int|literal-string`, and the new form
+  keeps the value out of the SQL string entirely. Behaviour is unchanged.
+
 ### Added
 
 - Out-of-the-box REST API, built on the Core API kit (Core `^2.2`). Safe by
