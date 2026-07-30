@@ -10,7 +10,7 @@
     "illuminate/database": "^12.0 || ^13.0",
     "illuminate/support": "^12.0 || ^13.0",
     "league/commonmark": "^2.4",
-    "ozankurt/laravel-modules-core": "^2.0",
+    "ozankurt/laravel-modules-core": "^1.0",
     "spatie/laravel-package-tools": "^1.92"
   },
   "require-dev": {
@@ -38,7 +38,7 @@
     }
   },
   "repositories": [
-    { "type": "vcs", "url": "https://github.com/OzanKurt/KurtModules-Core" }
+    { "type": "vcs", "url": "https://github.com/OzanKurt/laravel-modules-core" }
   ],
   "config": {
     "sort-packages": true,

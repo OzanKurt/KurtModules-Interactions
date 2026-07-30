@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Event;
 use Kurt\Modules\Interactions\Engagement\Models\Counter;
+use Kurt\Modules\Interactions\Events\Voted;
+use Kurt\Modules\Interactions\Exceptions\InvalidRatingException;
+use Kurt\Modules\Interactions\Exceptions\SelfInteractionException;
 use Kurt\Modules\Interactions\Tests\Stubs\Post;
 use Kurt\Modules\Interactions\Tests\Stubs\User;
 
@@ -98,6 +102,66 @@ it('rates with an updatable average', function () {
     expect($post->ratingsCount())->toBe(1);
 });
 
+it('prevents self-interaction and leaves counters untouched', function () {
+    $alice = makeUser('Alice');
+
+    expect(fn () => $alice->follow($alice))->toThrow(SelfInteractionException::class);
+    expect(fn () => $alice->like($alice))->toThrow(SelfInteractionException::class);
+    expect(fn () => $alice->upvote($alice))->toThrow(SelfInteractionException::class);
+    expect(fn () => $alice->favorite($alice))->toThrow(SelfInteractionException::class);
+    expect(fn () => $alice->rate($alice, 4))->toThrow(SelfInteractionException::class);
+
+    expect($alice->isFollowing($alice))->toBeFalse();
+    expect($alice->hasLiked($alice))->toBeFalse();
+    expect($alice->hasVoted($alice))->toBeFalse();
+    expect($alice->hasFavorited($alice))->toBeFalse();
+    expect($alice->ratingForMe($alice))->toBeNull();
+});
+
+it('allows self-interaction when configured', function () {
+    config()->set('interactions.engagement.allow_self_interaction', true);
+
+    $alice = makeUser('Alice');
+    $alice->follow($alice);
+
+    expect($alice->isFollowing($alice))->toBeTrue();
+});
+
+it('does not re-dispatch Voted when an identical vote is recast', function () {
+    Event::fake([Voted::class]);
+
+    $user = makeUser();
+    $post = makePost();
+
+    $user->upvote($post);
+    $user->upvote($post); // identical recast — must stay silent
+
+    Event::assertDispatchedTimes(Voted::class, 1);
+});
+
+it('re-dispatches Voted when the vote value changes', function () {
+    Event::fake([Voted::class]);
+
+    $user = makeUser();
+    $post = makePost();
+
+    $user->upvote($post);
+    $user->downvote($post); // 1 -> -1
+
+    Event::assertDispatchedTimes(Voted::class, 2);
+});
+
+it('rejects ratings outside the configured range', function () {
+    $user = makeUser();
+    $post = makePost();
+
+    expect(fn () => $user->rate($post, 0))->toThrow(InvalidRatingException::class);
+    expect(fn () => $user->rate($post, 6))->toThrow(InvalidRatingException::class);
+    expect(fn () => $user->rate($post, 300))->toThrow(InvalidRatingException::class);
+
+    expect($post->fresh()->ratingsCount())->toBe(0);
+});
+
 it('maintains the denormalized counter table', function () {
     $user = makeUser();
     $post = makePost();
@@ -110,4 +174,26 @@ it('maintains the denormalized counter table', function () {
         ->value('count');
 
     expect((int) $count)->toBe(1);
+});
+
+it('counts likes across many users and follows removals down', function () {
+    $post = makePost();
+    $alice = makeUser('Alice');
+    $bob = makeUser('Bob');
+    $carol = makeUser('Carol');
+
+    $alice->like($post);
+    $bob->like($post);
+    $carol->like($post);
+    expect($post->likesCount())->toBe(3);
+
+    $bob->unlike($post);
+    expect($post->fresh()->likesCount())->toBe(2);
+
+    $stored = Counter::query()
+        ->where('subject_id', $post->id)
+        ->where('type', 'like')
+        ->value('count');
+
+    expect((int) $stored)->toBe(2);
 });

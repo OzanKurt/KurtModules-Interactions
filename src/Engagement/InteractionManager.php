@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kurt\Modules\Interactions\Engagement;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Kurt\Modules\Interactions\Engagement\Enums\InteractionType;
 use Kurt\Modules\Interactions\Engagement\Models\Interaction;
 use Kurt\Modules\Interactions\Engagement\Models\Rating;
@@ -12,6 +13,8 @@ use Kurt\Modules\Interactions\Events\Followed;
 use Kurt\Modules\Interactions\Events\Liked;
 use Kurt\Modules\Interactions\Events\Rated;
 use Kurt\Modules\Interactions\Events\Voted;
+use Kurt\Modules\Interactions\Exceptions\InvalidRatingException;
+use Kurt\Modules\Interactions\Exceptions\SelfInteractionException;
 
 /**
  * Single write path for engagement. Every verb is idempotent via
@@ -24,17 +27,31 @@ final class InteractionManager
 
     public function add(Model $user, Model $subject, InteractionType $type, ?int $value = null): Interaction
     {
-        $interaction = Interaction::query()->updateOrCreate(
-            [
-                'user_id' => $user->getKey(),
-                'subject_type' => $subject->getMorphClass(),
-                'subject_id' => $subject->getKey(),
-                'type' => $type->value,
-            ],
-            ['value' => $value],
-        );
+        if ($this->isSelfInteraction($user, $subject)) {
+            throw SelfInteractionException::for($type);
+        }
 
-        $this->counters->sync($subject, $type);
+        // The row write and its counter bump must land together so concurrent
+        // writers can't lost-update the denormalized tally.
+        $interaction = DB::transaction(function () use ($user, $subject, $type, $value): Interaction {
+            $interaction = Interaction::query()->updateOrCreate(
+                [
+                    'user_id' => $user->getKey(),
+                    'subject_type' => $subject->getMorphClass(),
+                    'subject_id' => $subject->getKey(),
+                    'type' => $type->value,
+                ],
+                ['value' => $value],
+            );
+
+            // Only a brand-new row changes the tally; a value-only update
+            // (e.g. flipping a vote) leaves the row count untouched.
+            if ($interaction->wasRecentlyCreated) {
+                $this->counters->increment($subject, $type);
+            }
+
+            return $interaction;
+        });
 
         if ($interaction->wasRecentlyCreated) {
             match ($type) {
@@ -44,7 +61,9 @@ final class InteractionManager
             };
         }
 
-        if ($type === InteractionType::Vote) {
+        // Only fire Voted when the vote is newly cast or its value actually
+        // changed; re-casting an identical vote is a no-op and must stay silent.
+        if ($type === InteractionType::Vote && ($interaction->wasRecentlyCreated || $interaction->wasChanged('value'))) {
             event(new Voted($user, $subject, (int) $value));
         }
 
@@ -61,7 +80,7 @@ final class InteractionManager
             ->delete();
 
         if ($deleted > 0) {
-            $this->counters->sync($subject, $type);
+            $this->counters->decrement($subject, $type);
         }
 
         return $deleted > 0;
@@ -79,6 +98,12 @@ final class InteractionManager
 
     public function rate(Model $user, Model $subject, int $score): Rating
     {
+        if ($this->isSelfInteraction($user, $subject)) {
+            throw SelfInteractionException::forRating();
+        }
+
+        $this->guardRatingRange($score);
+
         $rating = Rating::query()->updateOrCreate(
             [
                 'user_id' => $user->getKey(),
@@ -111,5 +136,32 @@ final class InteractionManager
             ->value('score');
 
         return $score === null ? null : (int) $score;
+    }
+
+    /**
+     * Whether the actor is interacting with itself. Disallowed by default (it
+     * inflates counters), but can be permitted via config.
+     */
+    private function isSelfInteraction(Model $user, Model $subject): bool
+    {
+        if ((bool) config('interactions.engagement.allow_self_interaction', false)) {
+            return false;
+        }
+
+        return $user->is($subject);
+    }
+
+    /**
+     * Reject scores outside the configured inclusive range before they reach the
+     * unsignedTinyInteger column (where out-of-range values overflow/corrupt).
+     */
+    private function guardRatingRange(int $score): void
+    {
+        $min = (int) config('interactions.engagement.rating.min', 1);
+        $max = (int) config('interactions.engagement.rating.max', 5);
+
+        if ($score < $min || $score > $max) {
+            throw InvalidRatingException::outOfRange($score, $min, $max);
+        }
     }
 }

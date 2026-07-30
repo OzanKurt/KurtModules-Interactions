@@ -33,8 +33,72 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | HTTP / REST API
+    |--------------------------------------------------------------------------
+    |
+    | The out-of-the-box JSON API, built on the Core API kit. Safe-by-default:
+    | 'mode' = 'headless' registers nothing. Set INTERACTIONS_HTTP_MODE=api (or
+    | 'ui') to expose the endpoints. Reads over the denormalized data are public;
+    | every write (and the per-user engagement state) requires the auth
+    | middleware, so a host can layer its own guard/policy via route middleware.
+    |
+    | Endpoints address a polymorphic subject by {type}/{id}, where {type} is a
+    | morph alias registered in the host's morph map; unmapped types are 404.
+    |
+    */
+    'http' => [
+        'mode' => env('INTERACTIONS_HTTP_MODE', 'headless'),
+        'prefix' => 'api/interactions',
+        'middleware' => ['api'],
+        'auth_middleware' => ['auth'],
+        'rate_limit' => '60,1',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Engagement
+    |--------------------------------------------------------------------------
+    |
+    | Rules for the single engagement write path (likes, votes, favorites,
+    | follows, ratings, ...).
+    |
+    | 'allow_self_interaction' – when false (default) a user cannot
+    |   follow/like/vote/favorite/... their own model; attempting to does not
+    |   change any counters and raises a SelfInteractionException.
+    | 'rating' – inclusive score bounds enforced by rate(); scores outside the
+    |   range are rejected before they reach the storage column.
+    | 'counters.driver' – how the denormalized counters are kept in step with a
+    |   write (only relevant when the top-level 'counters.driver' is 'table'):
+    |     'recompute' – re-run a full COUNT(*) after each mutation. O(n) per
+    |        write but self-healing; the safe default.
+    |     'atomic'    – in-transaction increment/decrement of the stored tally.
+    |        O(1) per write; run `interactions:reconcile` periodically to bound
+    |        any drift.
+    |
+    */
+    'engagement' => [
+        'allow_self_interaction' => false,
+        'counters' => [
+            'driver' => 'recompute',
+        ],
+        'rating' => [
+            'min' => 1,
+            'max' => 5,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Reactions
     |--------------------------------------------------------------------------
+    |
+    | reactionSummary() is served from a denormalized per-(reactable, emoji)
+    | cache (interactions_reaction_counts) whenever the top-level
+    | 'counters.driver' is 'table'. That cache is maintained on react/unreact
+    | using the shared 'engagement.counters.driver' write strategy (recompute vs
+    | atomic) and rebuilt by `interactions:reconcile`. When 'counters.driver' is
+    | 'none' the summary falls back to a live aggregate over the reactions table.
+    |
     */
     'reactions' => [
         'allow_unicode' => true,
