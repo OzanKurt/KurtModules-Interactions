@@ -109,12 +109,11 @@ final class CounterSync
         ];
 
         DB::transaction(function () use ($keys, $delta): void {
-            $affected = Counter::query()
-                ->where($keys)
-                ->update([
-                    'count' => DB::raw('count + ('.$delta.')'),
-                    'updated_at' => now(),
-                ]);
+            $query = Counter::query()->where($keys);
+
+            $affected = $delta >= 0
+                ? $query->increment('count', $delta, ['updated_at' => now()])
+                : $query->decrement('count', -$delta, ['updated_at' => now()]);
 
             if ($affected === 0) {
                 Counter::query()->create($keys + ['count' => max(0, $delta)]);
