@@ -53,7 +53,7 @@ final class InteractionsServiceProvider extends PackageServiceProvider
         $this->app->singleton(Interactions::class);
     }
 
-    protected function moduleManifest(): ?ModuleManifest
+    protected function moduleManifest(): ModuleManifest
     {
         return ModuleManifest::make('interactions')
             ->name('Interactions')
