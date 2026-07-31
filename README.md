@@ -1,5 +1,7 @@
 # Interactions
 
+[![tests](https://github.com/OzanKurt/laravel-modules-interactions/actions/workflows/tests.yml/badge.svg)](https://github.com/OzanKurt/laravel-modules-interactions/actions/workflows/tests.yml)
+
 A full-featured, polymorphic social & engagement toolkit for Laravel. Any
 Eloquent model opts in via traits to gain emoji reactions, threaded comments,
 @mentions, the engagement primitives (like / dislike / vote / rate / favorite /
@@ -32,8 +34,9 @@ and [Laravel-Mentions](https://github.com/CrixuAMG/Laravel-Mentions).
 
 ## Requirements
 
-- PHP 8.4+, Laravel 13
-- [`ozankurt/laravel-modules-core`](https://github.com/OzanKurt/KurtModules-Core) ^2.0
+- PHP `^8.4`
+- Laravel `^13.0`
+- [`ozankurt/laravel-modules-core`](https://github.com/OzanKurt/laravel-modules-core) ^2.0
 
 ## Installation
 
@@ -46,7 +49,7 @@ Core is not on Packagist yet — add it as a VCS repository in your app's
 
 ```json
 "repositories": [
-    { "type": "vcs", "url": "https://github.com/OzanKurt/KurtModules-Core" }
+    { "type": "vcs", "url": "https://github.com/OzanKurt/laravel-modules-core" }
 ]
 ```
 
@@ -225,7 +228,7 @@ for an unknown type/subject, `422` for a bad emoji, unsupported kind, or
 self-interaction). Each group is throttled by the named `interactions-api`
 limiter (keyed by user id, or client IP for guests).
 
-[API kit]: https://github.com/OzanKurt/KurtModules-Core#api-kit
+[API kit]: https://github.com/OzanKurt/laravel-modules-core#api-kit
 
 ## Configuration
 
@@ -271,10 +274,15 @@ are skipped; the rows are reclaimed only on a real (force) delete.
 ## Testing
 
 ```bash
-composer test    # Pest
-composer stan    # PHPStan level 8
-composer lint    # Pint
+composer install
+vendor/bin/pint --test
+vendor/bin/phpstan analyse --memory-limit=2G
+vendor/bin/pest
 ```
+
+CI runs the same checks on every push and pull request
+(`.github/workflows/tests.yml`), against PHP 8.4 / Laravel 13. Static analysis
+is held at **PHPStan level 8**; the suite runs on **Pest 5**.
 
 ## License
 
